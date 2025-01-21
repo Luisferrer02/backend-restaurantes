@@ -5,7 +5,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const restaurantes = await Restaurante.find();
-    console.log('Restaurantes encontrados:', restaurantes); // Agrega este log
+    //console.log('Restaurantes encontrados:', restaurantes); // Agrega este log
     res.json(restaurantes);
   } catch (err) {
     console.error('Error al obtener restaurantes:', err.message);
