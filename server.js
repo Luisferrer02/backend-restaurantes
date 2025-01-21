@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({origin: '*'}));
 
 // Conexión a MongoDB
 mongoose
@@ -21,3 +21,7 @@ app.use('/api/restaurantes', require('./routes/restaurantesrutas'));
 
 // Iniciar el servidor
 app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
+
+app.get('/', (req, res) => {
+  res.send('Bienvenido al backend de restaurantes');
+});
