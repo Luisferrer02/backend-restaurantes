@@ -66,9 +66,10 @@ router.put(
 
       // Crear la visita con comentario
       const nuevaVisita = {
-        fecha: new Date(),
+        fecha: req.body.Fecha ? new Date(req.body.Fecha) : new Date(), // Usa la fecha enviada o la actual como fallback
         comentario: comentario,
       };
+      
 
       // Actualizar el campo visitas
       const restauranteActualizado = await Restaurante.findByIdAndUpdate(
