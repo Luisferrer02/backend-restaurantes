@@ -1,4 +1,6 @@
+// routes/restaurantesrutas.js
 const express = require('express');
+const mongoose = require('mongoose'); // Importar mongoose
 const { body, validationResult } = require('express-validator');
 const Restaurante = require('../models/Restaurante');
 const router = express.Router();
@@ -6,7 +8,9 @@ const router = express.Router();
 // Obtener todos los restaurantes
 router.get('/', async (req, res) => {
   try {
+    console.log('Recibiendo solicitud GET para todos los restaurantes.');
     const restaurantes = await Restaurante.find();
+    console.log(`Encontrados ${restaurantes.length} restaurantes.`);
     res.json(restaurantes);
   } catch (err) {
     console.error('Error al obtener restaurantes:', err.message);
@@ -14,6 +18,31 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Obtener los detalles de un restaurante por ID
+router.get('/:id', async (req, res) => {
+  console.log(`Recibiendo solicitud GET para restaurante con ID: ${req.params.id}`);
+  
+  // Verificar que el ID es válido
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    console.log('ID inválido.');
+    return res.status(400).json({ message: 'ID inválido' });
+  }
+
+  try {
+    const restaurante = await Restaurante.findById(req.params.id);
+    if (!restaurante) {
+      console.log('Restaurante no encontrado.');
+      return res.status(404).json({ message: 'Restaurante no encontrado' });
+    }
+    console.log('Restaurante encontrado:', restaurante.Nombre);
+    res.json(restaurante);
+  } catch (err) {
+    console.error('Error al obtener el restaurante:', err.message);
+    res.status(500).json({ message: 'Error al obtener el restaurante', error: err.message });
+  }
+});
+
+// Registrar una visita con comentario a un restaurante
 router.put(
   '/:id/visita',
   [
@@ -92,12 +121,14 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Errores de validación en POST:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
     try {
       const nuevoRestaurante = new Restaurante(req.body);
       await nuevoRestaurante.save();
+      console.log('Nuevo restaurante creado:', nuevoRestaurante.Nombre);
       res.status(201).json(nuevoRestaurante);
     } catch (err) {
       console.error('Error al crear el restaurante:', err.message);
@@ -106,6 +137,7 @@ router.post(
   }
 );
 
+// Actualizar un restaurante con validación
 // Actualizar un restaurante con validación
 router.put(
   '/:id',
@@ -134,14 +166,22 @@ router.put(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Errores de validación en PUT:', errors.array());
       return res.status(400).json({ errors: errors.array() });
+    }
+
+    // Verificar que el ID es válido
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'ID inválido' });
     }
 
     try {
       const restauranteActualizado = await Restaurante.findByIdAndUpdate(req.params.id, req.body, { new: true });
       if (!restauranteActualizado) {
+        console.log('Restaurante no encontrado en PUT.');
         return res.status(404).json({ message: 'Restaurante no encontrado' });
       }
+      console.log('Restaurante actualizado:', restauranteActualizado.Nombre);
       res.json(restauranteActualizado);
     } catch (err) {
       console.error('Error al actualizar el restaurante:', err.message);
@@ -152,36 +192,23 @@ router.put(
 
 // Eliminar un restaurante
 router.delete('/:id', async (req, res) => {
+  // Verificar que el ID es válido
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ message: 'ID inválido' });
+  }
+
   try {
     const restaurante = await Restaurante.findByIdAndDelete(req.params.id);
     if (!restaurante) {
+      console.log('Restaurante no encontrado en DELETE.');
       return res.status(404).json({ message: 'Restaurante no encontrado' });
     }
+    console.log('Restaurante eliminado:', restaurante.Nombre);
     res.json({ message: 'Restaurante eliminado exitosamente' });
   } catch (err) {
     console.error('Error al eliminar restaurante:', err.message);
     res.status(500).json({ message: 'Error al eliminar el restaurante', error: err.message });
   }
 });
-
-// routes/restaurantesrutas.js
-
-// Obtener los detalles de un restaurante por ID
-router.get('/:id', async (req, res) => {
-  console.log(`Recibiendo solicitud GET para restaurante con ID: ${req.params.id}`);
-  try {
-    const restaurante = await Restaurante.findById(req.params.id);
-    if (!restaurante) {
-      console.log('Restaurante no encontrado.');
-      return res.status(404).json({ message: 'Restaurante no encontrado' });
-    }
-    console.log('Restaurante encontrado:', restaurante.Nombre);
-    res.json(restaurante);
-  } catch (err) {
-    console.error('Error al obtener el restaurante:', err.message);
-    res.status(500).json({ message: 'Error al obtener el restaurante', error: err.message });
-  }
-});
-
 
 module.exports = router;
