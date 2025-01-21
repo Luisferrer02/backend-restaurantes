@@ -13,17 +13,57 @@ router.get('/', async (req, res) => {
   }
 });
 
-
-// Crear un nuevo restaurante
-router.post('/', async (req, res) => {
+router.put('/:id/visita', async (req, res) => {
   try {
-    const nuevoRestaurante = new Restaurante(req.body);
-    await nuevoRestaurante.save();
-    res.status(201).json(nuevoRestaurante);
+    const restauranteId = req.params.id;
+
+    // Obtener la fecha actual o recibirla desde el frontend
+    const nuevaFecha = new Date();
+
+    // Actualizar el campo fechasVisita agregando la nueva fecha
+    const restauranteActualizado = await Restaurante.findByIdAndUpdate(
+      restauranteId,
+      { $push: { fechasVisita: nuevaFecha } },
+      { new: true } // Para devolver el documento actualizado
+    );
+
+    if (!restauranteActualizado) {
+      return res.status(404).json({ message: 'Restaurante no encontrado' });
+    }
+
+    res.json(restauranteActualizado);
   } catch (err) {
-    res.status(400).json({ message: 'Error al crear el restaurante', error: err.message });
+    console.error('Error al registrar la visita:', err.message);
+    res.status(500).json({ message: 'Error al registrar la visita', error: err.message });
   }
 });
+
+
+const { body, validationResult } = require('express-validator');
+
+router.post(
+  '/',
+  [
+    body('Nombre').notEmpty().withMessage('El nombre es obligatorio'),
+    body('Tipo de cocina').notEmpty().withMessage('El tipo de cocina es obligatorio'),
+    body('Localización').notEmpty().withMessage('La localización es obligatoria'),
+    // Puedes agregar más validaciones según tus necesidades
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      const nuevoRestaurante = new Restaurante(req.body);
+      await nuevoRestaurante.save();
+      res.status(201).json(nuevoRestaurante);
+    } catch (err) {
+      res.status(400).json({ message: 'Error al crear el restaurante', error: err.message });
+    }
+  }
+);
 
 // Actualizar un restaurante
 router.put('/:id', async (req, res) => {
