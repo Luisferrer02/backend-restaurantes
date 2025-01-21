@@ -8,7 +8,11 @@ const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(express.json());
-app.use(cors({ origin: '*' }));
+app.use(cors({
+  origin: 'https://webapp-restaurantes.netlify.app', // Especifica tu dominio frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 
 // Conexión a MongoDB
 mongoose
