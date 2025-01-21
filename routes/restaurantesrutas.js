@@ -5,7 +5,6 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const restaurantes = await Restaurante.find();
-    console.log('Datos encontrados:', restaurantes); // Añade este log
     res.json(restaurantes);
   } catch (err) {
     res.status(500).json({ message: 'Error al obtener los restaurantes', error: err.message });
