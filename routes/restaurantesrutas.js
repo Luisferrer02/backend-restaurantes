@@ -14,7 +14,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Registrar una visita con comentario a un restaurante
 router.put(
   '/:id/visita',
   [
@@ -23,33 +22,40 @@ router.put(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Errores de validación en PUT /visita:', errors.array());
       return res.status(400).json({ errors: errors.array() });
+    }
+
+    // Verificar que el ID es válido
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'ID inválido' });
     }
 
     try {
       const restauranteId = req.params.id;
-      const nuevaFecha = new Date();
       const comentario = req.body.Comentario || '';
 
-      // Crear el objeto de la visita con comentario
+      // Crear la visita con comentario
       const nuevaVisita = {
-        fecha: nuevaFecha,
+        fecha: new Date(),
         comentario: comentario,
       };
 
-      // Actualizar el campo fechasVisita y comentariosVisita
+      // Actualizar el campo visitas
       const restauranteActualizado = await Restaurante.findByIdAndUpdate(
         restauranteId,
         {
-          $push: { fechasVisita: nuevaFecha, comentariosVisita: nuevaVisita },
+          $push: { visitas: nuevaVisita },
         },
         { new: true }
       );
 
       if (!restauranteActualizado) {
+        console.log('Restaurante no encontrado al registrar visita.');
         return res.status(404).json({ message: 'Restaurante no encontrado' });
       }
 
+      console.log('Visita registrada:', nuevaVisita);
       res.json(restauranteActualizado);
     } catch (err) {
       console.error('Error al registrar la visita:', err.message);

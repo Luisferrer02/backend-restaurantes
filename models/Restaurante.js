@@ -1,34 +1,34 @@
 // models/Restaurante.js
 const mongoose = require('mongoose');
 
-// Esquema para los comentarios de visitas
-const ComentarioVisitaSchema = new mongoose.Schema({
+const VisitaSchema = new mongoose.Schema({
   fecha: { type: Date, default: Date.now },
   comentario: { type: String, default: '' },
 });
 
-// Esquema principal del Restaurante
 const RestauranteSchema = new mongoose.Schema({
   Nombre: { type: String, required: true },
   'Tipo de cocina': { type: String, required: true },
   Localización: { type: String, required: true },
-  fechasVisita: { type: [Date], default: [] },
-  Descripcion: { type: String, default: '' }, // Campo opcional
-  Imagen: { type: String, default: '' }, // Campo opcional
+  visitas: { type: [VisitaSchema], default: [] }, // Combinar fechasVisita y comentariosVisita
+  Descripcion: { type: String, default: '' },
+  Imagen: { type: String, default: '' },
   Coordenadas: {
-    type: [Number], // [longitud, latitud]
-    index: '2dsphere', // Índice para consultas geoespaciales
-    validate: {
-      validator: function (v) {
-        return v.length === 2 && v.every(num => typeof num === 'number');
-      },
-      message: props => `${props.value} no es un arreglo válido de [longitud, latitud].`,
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point',
+    },
+    coordinates: {
+      type: [Number], // [longitud, latitud]
+      required: false,
     },
   },
-  comentariosVisita: { type: [ComentarioVisitaSchema], default: [] }, // Campo para comentarios de visitas
 }, {
-  collection: 'Restaurantes', // Nombre de la colección en MongoDB
+  collection: 'Restaurantes',
 });
 
+// Crear un índice 2dsphere para Coordenadas
+RestauranteSchema.index({ Coordenadas: '2dsphere' });
 
 module.exports = mongoose.model('Restaurante', RestauranteSchema);
