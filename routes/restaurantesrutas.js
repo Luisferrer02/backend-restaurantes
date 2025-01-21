@@ -190,6 +190,38 @@ router.put(
   }
 );
 
+// Actualizar las visitas de un restaurante
+router.put('/:id/actualizar-visitas', async (req, res) => {
+  const { id } = req.params;
+  const { visitas } = req.body;
+
+  // Validar que el ID sea válido
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: 'ID inválido' });
+  }
+
+  try {
+    // Actualizar el campo `visitas`
+    const restauranteActualizado = await Restaurante.findByIdAndUpdate(
+      id,
+      { visitas: visitas },
+      { new: true } // Devuelve el documento actualizado
+    );
+
+    if (!restauranteActualizado) {
+      console.log('Restaurante no encontrado al actualizar visitas.');
+      return res.status(404).json({ message: 'Restaurante no encontrado' });
+    }
+
+    console.log('Visitas actualizadas:', restauranteActualizado.visitas);
+    res.json(restauranteActualizado);
+  } catch (err) {
+    console.error('Error al actualizar visitas:', err.message);
+    res.status(500).json({ message: 'Error al actualizar visitas', error: err.message });
+  }
+});
+
+
 // Eliminar un restaurante
 router.delete('/:id', async (req, res) => {
   // Verificar que el ID es válido
