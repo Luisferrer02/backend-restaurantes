@@ -112,18 +112,18 @@ router.post(
     try {
       const { Nombre, "Tipo de cocina": TipoCocina, Localización } = req.body;
 
+      // Crear un nuevo documento sin incluir Coordenadas si no se envían valores válidos
       const nuevoRestaurante = new Restaurante({
         Nombre,
         "Tipo de cocina": TipoCocina,
         Localización,
-        visitas: [], // Inicializa como array vacío
-        // Omitir Coordenadas si no están presentes
+        visitas: [], // Inicializa siempre como array vacío
       });
 
       await nuevoRestaurante.save();
 
       console.log("Restaurante creado exitosamente:", nuevoRestaurante);
-      res.status(201).json(nuevoRestaurante);
+      res.status(201).json(nuevoRestaurante); // Respuesta exitosa con el objeto creado
     } catch (err) {
       console.error("Error al crear el restaurante:", err.message, err.stack);
       res.status(500).json({
@@ -133,6 +133,7 @@ router.post(
     }
   }
 );
+
 
 
 

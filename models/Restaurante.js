@@ -8,25 +8,22 @@ const VisitaSchema = new mongoose.Schema({
 
 const RestauranteSchema = new mongoose.Schema({
   Nombre: { type: String, required: true },
-  'Tipo de cocina': { type: String, required: true },
+  "Tipo de cocina": { type: String, required: true },
   Localización: { type: String, required: true },
-  visitas: { type: [VisitaSchema], default: [] }, // Combinar fechasVisita y comentariosVisita
-  Descripcion: { type: String, default: '' },
-  Imagen: { type: String, default: '' },
+  visitas: { type: Array, default: [] },
+  Descripcion: { type: String, default: "" },
+  Imagen: { type: String, default: "" },
   Coordenadas: {
     type: {
       type: String,
-      enum: ['Point'],
-      required: false, // No requerido
-      default: null,   // Permitir que no exista
+      enum: ["Point"],
+      required: false, // Permitir que sea opcional
     },
     coordinates: {
       type: [Number],
       required: false,
-      default: null,   // Permitir que no exista
     },
   },
-  
 }, {
   collection: 'Restaurantes',
 });
