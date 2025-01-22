@@ -99,35 +99,8 @@ router.post(
   "/",
   [
     body("Nombre").notEmpty().withMessage("El nombre es obligatorio"),
-    body("Tipo de cocina")
-      .notEmpty()
-      .withMessage("El tipo de cocina es obligatorio"),
-    body("Localización")
-      .notEmpty()
-      .withMessage("La localización es obligatoria"),
-    body("Coordenadas.coordinates")
-      .optional()
-      .isArray({ min: 2, max: 2 })
-      .withMessage("Coordenadas debe ser un array de dos números [longitud, latitud]")
-      .custom((value) => {
-        const [lng, lat] = value;
-        if (typeof lng !== "number" || typeof lat !== "number") {
-          throw new Error("Las coordenadas deben ser números");
-        }
-        return true;
-      }),
-    body("Coordenadas.type")
-      .optional()
-      .equals("Point")
-      .withMessage('El tipo de coordenadas debe ser "Point"'),
-    body("Imagen")
-      .optional()
-      .isURL()
-      .withMessage("La imagen debe ser una URL válida"),
-    body("Descripcion")
-      .optional()
-      .isString()
-      .withMessage("La descripción debe ser una cadena de texto"),
+    body("Tipo de cocina").notEmpty().withMessage("El tipo de cocina es obligatorio"),
+    body("Localización").notEmpty().withMessage("La localización es obligatoria"),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -137,16 +110,22 @@ router.post(
     }
 
     try {
-      // Crear un nuevo documento basado en el modelo Restaurante
-      const nuevoRestaurante = new Restaurante(req.body);
+      // Asegurarse de que siempre exista un campo visitas vacío
+      const { Nombre, "Tipo de cocina": TipoCocina, Localización } = req.body;
 
-      // Guardar en la base de datos
+      const nuevoRestaurante = new Restaurante({
+        Nombre,
+        "Tipo de cocina": TipoCocina,
+        Localización,
+        visitas: [], // Se crea siempre un array vacío
+      });
+
       await nuevoRestaurante.save();
 
       console.log("Restaurante creado exitosamente:", nuevoRestaurante);
       res.status(201).json(nuevoRestaurante);
     } catch (err) {
-      console.error("Error al crear el restaurante:", err.message);
+      console.error("Error al crear el restaurante:", err.message, err.stack);
       res.status(500).json({
         message: "Error interno del servidor",
         error: err.message,
