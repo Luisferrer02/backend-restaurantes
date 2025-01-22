@@ -98,11 +98,13 @@ router.put(
 router.post(
   "/",
   [
+    // Validación de los campos obligatorios
     body("Nombre").notEmpty().withMessage("El nombre es obligatorio"),
     body("Tipo de cocina").notEmpty().withMessage("El tipo de cocina es obligatorio"),
     body("Localización").notEmpty().withMessage("La localización es obligatoria"),
   ],
   async (req, res) => {
+    // Manejo de validaciones
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       console.error("Errores de validación:", errors.array());
@@ -110,21 +112,24 @@ router.post(
     }
 
     try {
-      // Asegurarse de que siempre exista un campo visitas vacío
+      // Extraer los campos obligatorios del cuerpo de la solicitud
       const { Nombre, "Tipo de cocina": TipoCocina, Localización } = req.body;
 
+      // Crear un nuevo documento con visitas inicializadas como un array vacío
       const nuevoRestaurante = new Restaurante({
         Nombre,
         "Tipo de cocina": TipoCocina,
         Localización,
-        visitas: [], // Se crea siempre un array vacío
+        visitas: [], // Siempre inicializa este campo como array vacío
       });
 
+      // Guardar en la base de datos
       await nuevoRestaurante.save();
 
       console.log("Restaurante creado exitosamente:", nuevoRestaurante);
-      res.status(201).json(nuevoRestaurante);
+      res.status(201).json(nuevoRestaurante); // Respuesta exitosa con el objeto creado
     } catch (err) {
+      // Manejo de errores de servidor
       console.error("Error al crear el restaurante:", err.message, err.stack);
       res.status(500).json({
         message: "Error interno del servidor",
@@ -133,6 +138,7 @@ router.post(
     }
   }
 );
+
 
 // Actualizar un restaurante con validación
 // Actualizar un restaurante con validación
