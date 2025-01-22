@@ -96,44 +96,61 @@ router.put(
 
 // Crear un nuevo restaurante con validación
 router.post(
-  '/',
+  "/",
   [
-    body('Nombre').notEmpty().withMessage('El nombre es obligatorio'),
-    body('Tipo de cocina').notEmpty().withMessage('El tipo de cocina es obligatorio'),
-    body('Localización').notEmpty().withMessage('La localización es obligatoria'),
-    body('Coordenadas.coordinates')
+    body("Nombre").notEmpty().withMessage("El nombre es obligatorio"),
+    body("Tipo de cocina")
+      .notEmpty()
+      .withMessage("El tipo de cocina es obligatorio"),
+    body("Localización")
+      .notEmpty()
+      .withMessage("La localización es obligatoria"),
+    body("Coordenadas.coordinates")
       .optional()
       .isArray({ min: 2, max: 2 })
-      .withMessage('Coordenadas debe ser un array de dos números [longitud, latitud]')
+      .withMessage("Coordenadas debe ser un array de dos números [longitud, latitud]")
       .custom((value) => {
         const [lng, lat] = value;
-        if (typeof lng !== 'number' || typeof lat !== 'number') {
-          throw new Error('Las coordenadas deben ser números');
+        if (typeof lng !== "number" || typeof lat !== "number") {
+          throw new Error("Las coordenadas deben ser números");
         }
         return true;
       }),
-    body('Coordenadas.type')
+    body("Coordenadas.type")
       .optional()
-      .equals('Point')
-      .withMessage('Tipo de coordenadas debe ser "Point"'),
-    body('Imagen').optional().isURL().withMessage('Imagen debe ser una URL válida'),
-    body('Descripcion').optional().isString().withMessage('Descripción debe ser una cadena de texto'),
+      .equals("Point")
+      .withMessage('El tipo de coordenadas debe ser "Point"'),
+    body("Imagen")
+      .optional()
+      .isURL()
+      .withMessage("La imagen debe ser una URL válida"),
+    body("Descripcion")
+      .optional()
+      .isString()
+      .withMessage("La descripción debe ser una cadena de texto"),
   ],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Errores de validación en POST:', errors.array());
+      console.error("Errores de validación:", errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
     try {
+      // Crear un nuevo documento basado en el modelo Restaurante
       const nuevoRestaurante = new Restaurante(req.body);
+
+      // Guardar en la base de datos
       await nuevoRestaurante.save();
-      console.log('Nuevo restaurante creado:', nuevoRestaurante.Nombre);
+
+      console.log("Restaurante creado exitosamente:", nuevoRestaurante);
       res.status(201).json(nuevoRestaurante);
     } catch (err) {
-      console.error('Error al crear el restaurante:', err.message);
-      res.status(400).json({ message: 'Error al crear el restaurante', error: err.message });
+      console.error("Error al crear el restaurante:", err.message);
+      res.status(500).json({
+        message: "Error interno del servidor",
+        error: err.message,
+      });
     }
   }
 );
