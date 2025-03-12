@@ -26,6 +26,8 @@ mongoose
 // Rutas de la API
 app.use('/api/restaurantes', require('./routes/restaurantesrutas'));
 
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
 // Ruta principal
 app.get('/', (req, res) => {
   res.send('Bienvenido al backend de restaurantes');
@@ -43,3 +45,4 @@ server.on('error', (err) => {
   }
   process.exit(1);
 });
+
