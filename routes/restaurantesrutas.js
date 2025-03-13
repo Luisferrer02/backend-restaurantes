@@ -149,7 +149,7 @@ router.put(
 router.post(
   "/",
   authMiddleware,
-  adminMiddleware,
+  /*adminMiddleware,*/
   [
     body("Nombre").notEmpty().withMessage("El nombre es obligatorio"),
     body("Tipo de cocina").notEmpty().withMessage("El tipo de cocina es obligatorio"),
