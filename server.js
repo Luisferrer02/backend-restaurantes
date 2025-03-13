@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -6,7 +7,6 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Middleware
 app.use(express.json());
 const allowedOrigins = ['https://webapp-restaurantes.netlify.app', 'http://localhost:3000'];
 app.use(cors({
@@ -21,7 +21,6 @@ app.use(cors({
   credentials: true
 }));
 
-// Conexión a MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
@@ -30,18 +29,14 @@ mongoose
   })
   .catch(err => console.error('Error conectando a MongoDB:', err));
 
-// Rutas de la API
 app.use('/api/restaurantes', require('./routes/restaurantesrutas'));
 app.use('/api/auth', require('./routes/auth'));
 
-// Ruta principal
 app.get('/', (req, res) => {
   res.send('Bienvenido al backend de restaurantes');
 });
 
-// Iniciar el servidor
 const server = app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
-
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`El puerto ${PORT} ya está en uso. Por favor, elige otro puerto.`);
