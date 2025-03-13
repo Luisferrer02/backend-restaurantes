@@ -130,9 +130,9 @@ router.post(
       const { Nombre, "Tipo de cocina": TipoCocina, Localización } = req.body;
       // Retrieve the email of the user from the token
       const ownerEmail = req.user.email;
-      let nuevoRestaurante
+      let nuevoRestaurante;
       if (ownerEmail === "luisferrer2002@gmail.com" || ownerEmail === "catalinavichtortola@gmail.com") {
-        const nuevoRestaurante = new Restaurante({
+        nuevoRestaurante = new Restaurante({
           Nombre,
           "Tipo de cocina": TipoCocina,
           Localización,
@@ -141,7 +141,7 @@ router.post(
         });
       }
       else{
-        const nuevoRestaurante = new Restaurante({
+        nuevoRestaurante = new Restaurante({
           Nombre,
           "Tipo de cocina": TipoCocina,
           Localización,
