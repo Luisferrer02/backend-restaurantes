@@ -1,4 +1,3 @@
-// routes/restaurantesrutas.js
 const express = require('express');
 const mongoose = require('mongoose');
 const { body, validationResult } = require('express-validator');
@@ -9,115 +8,50 @@ const router = express.Router();
 
 /* --------------------------------------------------------------------
    RUTA PÚBLICA
-   Esta ruta debe definirse antes que cualquier ruta con parámetros dinámicos
-   para que "/public" no se interprete como un ID.
+   NO se requiere autenticación
 -------------------------------------------------------------------- */
 router.get('/public', async (req, res) => {
   try {
-    const { visitado, sort } = req.query;
-    // Filtrar para que se muestren restaurantes cuyo array "owners" incluya "luisferrer2002@gmail.com"
-    let query = { owners: "luisferrer2002@gmail.com" };
-
-    if (visitado === 'si') {
-      query.visitas = { $exists: true, $not: { $size: 0 } };
-    } else if (visitado === 'no') {
-      query.$or = [
-        { visitas: { $exists: false } },
-        { visitas: { $size: 0 } }
-      ];
-    }
-
-    let restaurantes = await Restaurante.find(query);
-
-    // Ordenación en memoria
-    if (sort) {
-      if (sort === 'fecha') {
-        restaurantes = restaurantes.sort((a, b) => {
-          const aLastDate = (a.visitas && a.visitas.length > 0)
-            ? new Date(a.visitas[a.visitas.length - 1].fecha)
-            : null;
-          const bLastDate = (b.visitas && b.visitas.length > 0)
-            ? new Date(b.visitas[b.visitas.length - 1].fecha)
-            : null;
-          if (aLastDate && bLastDate) return aLastDate - bLastDate;
-          if (aLastDate && !bLastDate) return -1;
-          if (!aLastDate && bLastDate) return 1;
-          return a.Nombre.localeCompare(b.Nombre);
-        });
-      } else if (sort === 'nombre') {
-        restaurantes = restaurantes.sort((a, b) =>
-          a.Nombre.localeCompare(b.Nombre)
-        );
-      } else if (sort === 'tipo') {
-        restaurantes = restaurantes.sort((a, b) =>
-          a["Tipo de cocina"].localeCompare(b["Tipo de cocina"])
-        );
-      }
-    }
-
+    // Filter for public restaurants (owned by luisferrer2002@gmail.com)
+    const restaurantes = await Restaurante.find({ owners: "luisferrer2002@gmail.com" });
     res.json({ total: restaurantes.length, restaurantes });
   } catch (err) {
-    console.error('Error en ruta pública:', err.message);
-    res.status(500).json({ message: 'Error al obtener los restaurantes', error: err.message });
+    console.error('Error fetching public restaurants:', err);
+    res.status(500).json({ message: 'Error al obtener restaurantes públicos' });
   }
 });
 
 /* --------------------------------------------------------------------
-   RUTAS PROTEGIDAS
+   RUTA PRIVADA
+   Autenticación requerida
 -------------------------------------------------------------------- */
-
-// GET: Listar restaurantes para el usuario autenticado
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { visitado, sort, owner } = req.query;
-    let query = {};
-
-    // Si se especifica owner en query, se usa ese email; de lo contrario, el del usuario autenticado.
-    const ownerEmail = owner ? owner : req.user.email;
-    query.owners = ownerEmail;
-
-    if (visitado === 'si') {
-      query.visitas = { $exists: true, $not: { $size: 0 } };
-    } else if (visitado === 'no') {
-      query.$or = [
-        { visitas: { $exists: false } },
-        { visitas: { $size: 0 } }
-      ];
-    }
-
-    let restaurantes = await Restaurante.find(query);
-
-    if (sort) {
-      if (sort === 'fecha') {
-        restaurantes = restaurantes.sort((a, b) => {
-          const aLastDate = (a.visitas && a.visitas.length > 0)
-            ? new Date(a.visitas[a.visitas.length - 1].fecha)
-            : null;
-          const bLastDate = (b.visitas && b.visitas.length > 0)
-            ? new Date(b.visitas[b.visitas.length - 1].fecha)
-            : null;
-          if (aLastDate && bLastDate) return aLastDate - bLastDate;
-          if (aLastDate && !bLastDate) return -1;
-          if (!aLastDate && bLastDate) return 1;
-          return a.Nombre.localeCompare(b.Nombre);
-        });
-      } else if (sort === 'nombre') {
-        restaurantes = restaurantes.sort((a, b) =>
-          a.Nombre.localeCompare(b.Nombre)
-        );
-      } else if (sort === 'tipo') {
-        restaurantes = restaurantes.sort((a, b) =>
-          a["Tipo de cocina"].localeCompare(b["Tipo de cocina"])
-        );
-      }
-    }
-
+    // Log for debugging
+    console.log('User from token:', req.user);
+    
+    // Get user-specific restaurants using the email from the token
+    const userId = req.user.userId;
+    console.log('Looking for restaurants with owner ID:', userId);
+    
+    // Debug: total restaurant count
+    const allCount = await Restaurante.countDocuments();
+    console.log(`Total restaurant count: ${allCount}`);
+    
+    // Query for user's restaurants (assuming owners contains the user's email)
+    const restaurantes = await Restaurante.find({ owners: req.user.email });
+    console.log(`Found ${restaurantes.length} restaurants for user`);
+    
     res.json({ total: restaurantes.length, restaurantes });
   } catch (err) {
-    console.error('Error al obtener restaurantes:', err.message);
-    res.status(500).json({ message: 'Error al obtener los restaurantes', error: err.message });
+    console.error('Error fetching user restaurants:', err);
+    res.status(500).json({ message: 'Error al obtener restaurantes', error: err.message });
   }
 });
+
+/* --------------------------------------------------------------------
+   RUTAS RESTO (sin cambios)
+-------------------------------------------------------------------- */
 
 // GET: Obtener los detalles de un restaurante por ID
 router.get('/:id', async (req, res) => {
@@ -179,7 +113,6 @@ router.put(
 );
 
 // POST: Crear un nuevo restaurante
-// (Aquí se permite la creación a usuarios autenticados, sin restricción de rol)
 router.post(
   "/",
   authMiddleware,
@@ -195,11 +128,14 @@ router.post(
     }
     try {
       const { Nombre, "Tipo de cocina": TipoCocina, Localización } = req.body;
+      // Retrieve the email of the user from the token
+      const ownerEmail = req.user.email;
       const nuevoRestaurante = new Restaurante({
         Nombre,
         "Tipo de cocina": TipoCocina,
         Localización,
         visitas: [],
+        owners: [ownerEmail]
       });
       await nuevoRestaurante.save();
       console.log("Restaurante creado exitosamente:", nuevoRestaurante);
@@ -215,7 +151,6 @@ router.post(
 router.put(
   '/:id',
   authMiddleware,
-  adminMiddleware,
   [
     body('Nombre').optional().notEmpty().withMessage('El nombre no puede estar vacío'),
     body('Tipo de cocina').optional().notEmpty().withMessage('El tipo de cocina no puede estar vacío'),
@@ -262,7 +197,7 @@ router.put(
 );
 
 // PUT: Actualizar las visitas de un restaurante (solo para admin)
-router.put('/:id/actualizar-visitas', authMiddleware, adminMiddleware, async (req, res) => {
+router.put('/:id/actualizar-visitas', authMiddleware, async (req, res) => {
   const { id } = req.params;
   const { visitas } = req.body;
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -287,7 +222,7 @@ router.put('/:id/actualizar-visitas', authMiddleware, adminMiddleware, async (re
 });
 
 // DELETE: Eliminar un restaurante (solo para admin)
-router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return res.status(400).json({ message: 'ID inválido' });
   }

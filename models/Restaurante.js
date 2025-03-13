@@ -1,4 +1,3 @@
-// models/Restaurante.js
 const mongoose = require('mongoose');
 
 const VisitaSchema = new mongoose.Schema({
@@ -17,13 +16,15 @@ const RestauranteSchema = new mongoose.Schema({
     type: {
       type: String,
       enum: ["Point"],
-      required: false, // Permitir que sea opcional
+      required: false, // Opcional
     },
     coordinates: {
       type: [Number],
       required: false,
     },
   },
+  // New field to store owner(s) email(s)
+  owners: { type: [String], required: true },
 }, {
   collection: 'Restaurantes',
 });
