@@ -24,8 +24,11 @@ router.get('/', async (req, res) => {
       // Restaurantes con al menos 1 visita registrada
       query.visitas = { $exists: true, $not: { $size: 0 } };
     } else if (visitado === 'no') {
-      // Restaurantes sin ninguna visita
-      query.visitas = { $size: 0 };
+      // Restaurantes sin visitas: que no tengan el campo o que esté vacío
+      query.$or = [
+        { visitas: { $exists: false } },
+        { visitas: { $size: 0 } }
+      ];
     }
 
     let restaurantes = await Restaurante.find(query);
