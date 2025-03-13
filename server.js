@@ -8,11 +8,20 @@ const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(express.json());
+const allowedOrigins = ['https://webapp-restaurantes.netlify.app', 'http://localhost:3000'];
 app.use(cors({
-  origin: 'https://webapp-restaurantes.netlify.app', // Especifica tu dominio frontend
+  origin: function (origin, callback) {
+    // Permitir solicitudes sin origen (por ejemplo, desde curl o herramientas similares)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error(`El origen ${origin} no está permitido por CORS`), false);
+    }
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
+
 
 // Conexión a MongoDB
 mongoose
