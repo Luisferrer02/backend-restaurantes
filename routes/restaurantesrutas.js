@@ -3,28 +3,45 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { body, validationResult } = require('express-validator');
 const Restaurante = require('../models/Restaurante');
-
-// Importar middlewares de autenticación y autorización
-const { authMiddleware, adminMiddleware } = require('../middlewares/auth');
-
+const { authMiddleware } = require('../middlewares/auth');
 const router = express.Router();
 
-// --------------------------------------------------------------------
-// GET: Listar todos los restaurantes con filtrado y ordenación
-// Parámetros opcionales en query:
-//  - visitado: 'si' para los que tienen visitas, 'no' para los que no tienen visitas
-//  - sort: 'fecha', 'nombre' o 'tipo'
-// Se devuelve además el número total de resultados en el campo "total"
-router.get('/', async (req, res) => {
+// Función auxiliar para verificar permisos de modificación/eliminación
+function canModifyRestaurant(req, restaurante) {
+  const userEmail = req.user.email;
+  // Se permite si el usuario está incluido en el array owners
+  if (restaurante.owners.includes(userEmail)) return true;
+  // Permitir modificar la "lista principal" si el restaurante pertenece a luisferrer2002@gmail.com
+  // y el usuario autenticado es luisferrer2002@gmail.com o catalinavichtortola@gmail.com
+  if (
+    restaurante.owners.includes('luisferrer2002@gmail.com') &&
+    (userEmail === 'luisferrer2002@gmail.com' || userEmail === 'catalinavichtortola@gmail.com')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+// GET: Listar restaurantes
+// Permite filtrar por:
+//   - owner: Si se envía en query se usa ese email; de lo contrario, se usa el email del usuario autenticado.
+//   - visitado: 'si' para restaurantes con al menos 1 visita, 'no' para los que no tengan visitas (o no definidas)
+//   - sort: 'fecha', 'nombre' o 'tipo'
+router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { visitado, sort } = req.query;
+    const { visitado, sort, owner } = req.query;
     let query = {};
 
+    // Filtrado por propietario: si se pasa "owner" en query se usa ese valor; de lo contrario, se usa el email del usuario
+    const ownerEmail = owner ? owner : req.user.email;
+    query.owners = ownerEmail; // busca restaurantes donde el array owners incluya este email
+
+    // Filtro de visitas:
     if (visitado === 'si') {
       // Restaurantes con al menos 1 visita registrada
       query.visitas = { $exists: true, $not: { $size: 0 } };
     } else if (visitado === 'no') {
-      // Restaurantes sin visitas: que no tengan el campo o que esté vacío
+      // Restaurantes sin visitas: incluye documentos sin campo o con array vacío
       query.$or = [
         { visitas: { $exists: false } },
         { visitas: { $size: 0 } }
@@ -33,11 +50,9 @@ router.get('/', async (req, res) => {
 
     let restaurantes = await Restaurante.find(query);
 
-    // Aplicar ordenación según el criterio seleccionado
+    // Ordenación en memoria (por fecha, nombre o tipo)
     if (sort) {
       if (sort === 'fecha') {
-        // Ordenar: si el restaurante tiene visitas se usa la fecha de la última visita;
-        // si no, se ordena alfabéticamente por el nombre.
         restaurantes = restaurantes.sort((a, b) => {
           const aLastDate = (a.visitas && a.visitas.length > 0)
             ? new Date(a.visitas[a.visitas.length - 1].fecha)
@@ -73,83 +88,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-// --------------------------------------------------------------------
-// GET: Obtener los detalles de un restaurante por ID
-router.get('/:id', async (req, res) => {
-  console.log(`Recibiendo solicitud GET para restaurante con ID: ${req.params.id}`);
-  
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    console.log('ID inválido.');
-    return res.status(400).json({ message: 'ID inválido' });
-  }
-
-  try {
-    const restaurante = await Restaurante.findById(req.params.id);
-    if (!restaurante) {
-      console.log('Restaurante no encontrado.');
-      return res.status(404).json({ message: 'Restaurante no encontrado' });
-    }
-    console.log('Restaurante encontrado:', restaurante.Nombre);
-    res.json(restaurante);
-  } catch (err) {
-    console.error('Error al obtener el restaurante:', err.message);
-    res.status(500).json({ message: 'Error al obtener el restaurante', error: err.message });
-  }
-});
-
-// --------------------------------------------------------------------
-// PUT: Registrar una visita con comentario a un restaurante
-router.put(
-  '/:id/visita',
-  [
-    body('Comentario').optional().isString().withMessage('El comentario debe ser una cadena de texto'),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      console.log('Errores de validación en PUT /visita:', errors.array());
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ message: 'ID inválido' });
-    }
-
-    try {
-      const restauranteId = req.params.id;
-      const comentario = req.body.Comentario || '';
-      const nuevaVisita = {
-        fecha: req.body.Fecha ? new Date(req.body.Fecha) : new Date(),
-        comentario: comentario,
-      };
-
-      const restauranteActualizado = await Restaurante.findByIdAndUpdate(
-        restauranteId,
-        { $push: { visitas: nuevaVisita } },
-        { new: true }
-      );
-
-      if (!restauranteActualizado) {
-        console.log('Restaurante no encontrado al registrar visita.');
-        return res.status(404).json({ message: 'Restaurante no encontrado' });
-      }
-
-      console.log('Visita registrada:', nuevaVisita);
-      res.json(restauranteActualizado);
-    } catch (err) {
-      console.error('Error al registrar la visita:', err.message);
-      res.status(500).json({ message: 'Error al registrar la visita', error: err.message });
-    }
-  }
-);
-
-// --------------------------------------------------------------------
 // POST: Crear un nuevo restaurante
-// Solo pueden crear nuevos restaurantes los usuarios autenticados con rol "admin"
 router.post(
   "/",
   authMiddleware,
-  /*adminMiddleware,*/
   [
     body("Nombre").notEmpty().withMessage("El nombre es obligatorio"),
     body("Tipo de cocina").notEmpty().withMessage("El tipo de cocina es obligatorio"),
@@ -161,19 +103,19 @@ router.post(
       console.error("Errores de validación:", errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
-
     try {
       const { Nombre, "Tipo de cocina": TipoCocina, Localización } = req.body;
+      const owner = req.user.email; // Se asigna el email del usuario autenticado como propietario inicial
 
       const nuevoRestaurante = new Restaurante({
         Nombre,
         "Tipo de cocina": TipoCocina,
         Localización,
         visitas: [],
+        owners: [owner] // Se inicializa el array de propietarios con el usuario que crea
       });
 
       await nuevoRestaurante.save();
-
       console.log("Restaurante creado exitosamente:", nuevoRestaurante);
       res.status(201).json(nuevoRestaurante);
     } catch (err) {
@@ -186,13 +128,10 @@ router.post(
   }
 );
 
-// --------------------------------------------------------------------
-// PUT: Actualizar un restaurante con validación
-// Solo usuarios con rol "admin" pueden actualizar
+// PUT: Actualizar un restaurante
 router.put(
   '/:id',
   authMiddleware,
-  adminMiddleware,
   [
     body('Nombre').optional().notEmpty().withMessage('El nombre no puede estar vacío'),
     body('Tipo de cocina').optional().notEmpty().withMessage('El tipo de cocina no puede estar vacío'),
@@ -227,11 +166,15 @@ router.put(
     }
 
     try {
-      const restauranteActualizado = await Restaurante.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      if (!restauranteActualizado) {
+      const restaurante = await Restaurante.findById(req.params.id);
+      if (!restaurante) {
         console.log('Restaurante no encontrado en PUT.');
         return res.status(404).json({ message: 'Restaurante no encontrado' });
       }
+      if (!canModifyRestaurant(req, restaurante)) {
+        return res.status(403).json({ message: 'No tienes permisos para modificar este restaurante' });
+      }
+      const restauranteActualizado = await Restaurante.findByIdAndUpdate(req.params.id, req.body, { new: true });
       console.log('Restaurante actualizado:', restauranteActualizado.Nombre);
       res.json(restauranteActualizado);
     } catch (err) {
@@ -241,10 +184,8 @@ router.put(
   }
 );
 
-// --------------------------------------------------------------------
-// PUT: Actualizar las visitas de un restaurante
-// Solo usuarios admin pueden modificar la lista de visitas manualmente
-router.put('/:id/actualizar-visitas', authMiddleware, adminMiddleware, async (req, res) => {
+// PUT: Actualizar visitas
+router.put('/:id/actualizar-visitas', authMiddleware, async (req, res) => {
   const { id } = req.params;
   const { visitas } = req.body;
 
@@ -253,17 +194,19 @@ router.put('/:id/actualizar-visitas', authMiddleware, adminMiddleware, async (re
   }
 
   try {
+    const restaurante = await Restaurante.findById(id);
+    if (!restaurante) {
+      console.log('Restaurante no encontrado al actualizar visitas.');
+      return res.status(404).json({ message: 'Restaurante no encontrado' });
+    }
+    if (!canModifyRestaurant(req, restaurante)) {
+      return res.status(403).json({ message: 'No tienes permisos para modificar las visitas de este restaurante' });
+    }
     const restauranteActualizado = await Restaurante.findByIdAndUpdate(
       id,
       { visitas: visitas },
       { new: true }
     );
-
-    if (!restauranteActualizado) {
-      console.log('Restaurante no encontrado al actualizar visitas.');
-      return res.status(404).json({ message: 'Restaurante no encontrado' });
-    }
-
     console.log('Visitas actualizadas:', restauranteActualizado.visitas);
     res.json(restauranteActualizado);
   } catch (err) {
@@ -272,21 +215,23 @@ router.put('/:id/actualizar-visitas', authMiddleware, adminMiddleware, async (re
   }
 });
 
-// --------------------------------------------------------------------
 // DELETE: Eliminar un restaurante
-// Solo usuarios admin pueden eliminar restaurantes
-router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return res.status(400).json({ message: 'ID inválido' });
   }
 
   try {
-    const restaurante = await Restaurante.findByIdAndDelete(req.params.id);
+    const restaurante = await Restaurante.findById(req.params.id);
     if (!restaurante) {
       console.log('Restaurante no encontrado en DELETE.');
       return res.status(404).json({ message: 'Restaurante no encontrado' });
     }
-    console.log('Restaurante eliminado:', restaurante.Nombre);
+    if (!canModifyRestaurant(req, restaurante)) {
+      return res.status(403).json({ message: 'No tienes permisos para eliminar este restaurante' });
+    }
+    const restauranteEliminado = await Restaurante.findByIdAndDelete(req.params.id);
+    console.log('Restaurante eliminado:', restauranteEliminado.Nombre);
     res.json({ message: 'Restaurante eliminado exitosamente' });
   } catch (err) {
     console.error('Error al eliminar restaurante:', err.message);
