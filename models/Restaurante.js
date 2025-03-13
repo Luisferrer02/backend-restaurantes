@@ -17,14 +17,13 @@ const RestauranteSchema = new mongoose.Schema({
     type: {
       type: String,
       enum: ["Point"],
-      required: false,
+      required: false, // Permitir que sea opcional
     },
     coordinates: {
       type: [Number],
       required: false,
     },
   },
-  owners: { type: [String], default: [] }
 }, {
   collection: 'Restaurantes',
 });
