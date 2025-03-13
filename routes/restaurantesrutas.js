@@ -24,12 +24,12 @@ function canModifyRestaurant(req, restaurante) {
 
 // ---------------------------
 // Ruta Pública: No requiere autenticación
-// Devuelve la lista de restaurantes de luisferrer2002@gmail.com
-// Permite filtrar por visitado y orden
+// Devuelve la lista de restaurantes de luisferrer2002@gmail.com,
+// permitiendo filtrar por visitado y orden
 router.get('/public', async (req, res) => {
   try {
     const { visitado, sort } = req.query;
-    // Filtramos para que se muestren los restaurantes cuyo array "owners" incluya "luisferrer2002@gmail.com"
+    // Se filtran los restaurantes cuyo array "owners" incluya "luisferrer2002@gmail.com"
     let query = { owners: "luisferrer2002@gmail.com" };
 
     if (visitado === 'si') {
@@ -45,7 +45,7 @@ router.get('/public', async (req, res) => {
 
     let restaurantes = await Restaurante.find(query);
 
-    // Ordenación en memoria: por fecha, nombre o tipo
+    // Ordenación en memoria (por fecha, nombre o tipo)
     if (sort) {
       if (sort === 'fecha') {
         restaurantes = restaurantes.sort((a, b) => {
@@ -83,7 +83,6 @@ router.get('/public', async (req, res) => {
   }
 });
 
-
 // ---------------------------
 // Rutas protegidas: Requieren autenticación
 
@@ -93,7 +92,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const { visitado, sort, owner } = req.query;
     let query = {};
 
-    // Si se especifica owner en query, se usará ese email, sino el del usuario autenticado
+    // Si se especifica owner en query, se usa ese email; de lo contrario, el del usuario autenticado
     const ownerEmail = owner ? owner : req.user.email;
     query.owners = ownerEmail;
 
