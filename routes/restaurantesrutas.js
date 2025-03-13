@@ -29,13 +29,14 @@ function canModifyRestaurant(req, restaurante) {
 router.get('/public', async (req, res) => {
   try {
     const { visitado, sort } = req.query;
+    // Filtramos para que se muestren los restaurantes cuyo array "owners" incluya "luisferrer2002@gmail.com"
     let query = { owners: "luisferrer2002@gmail.com" };
 
     if (visitado === 'si') {
       // Restaurantes con al menos 1 visita registrada
       query.visitas = { $exists: true, $not: { $size: 0 } };
     } else if (visitado === 'no') {
-      // Restaurantes sin visitas: incluye documentos sin campo o con array vacío
+      // Restaurantes sin visitas: documentos sin el campo o con array vacío
       query.$or = [
         { visitas: { $exists: false } },
         { visitas: { $size: 0 } }
@@ -44,7 +45,7 @@ router.get('/public', async (req, res) => {
 
     let restaurantes = await Restaurante.find(query);
 
-    // Ordenación en memoria (por fecha, nombre o tipo)
+    // Ordenación en memoria: por fecha, nombre o tipo
     if (sort) {
       if (sort === 'fecha') {
         restaurantes = restaurantes.sort((a, b) => {
@@ -74,12 +75,14 @@ router.get('/public', async (req, res) => {
         );
       }
     }
+
     res.json({ total: restaurantes.length, restaurantes });
   } catch (err) {
     console.error('Error en ruta pública:', err.message);
     res.status(500).json({ message: 'Error al obtener los restaurantes', error: err.message });
   }
 });
+
 
 // ---------------------------
 // Rutas protegidas: Requieren autenticación

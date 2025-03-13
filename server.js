@@ -42,6 +42,7 @@ app.get('/', (req, res) => {
   res.send('Bienvenido al backend de restaurantes');
 });
 
+
 // Iniciar el servidor
 const server = app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
 
