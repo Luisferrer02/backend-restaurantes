@@ -5,7 +5,7 @@ const axios = require('axios');
 const readline = require('readline');
 
 // Asegúrate de que la ruta del modelo sea correcta según tu proyecto
-const Restaurante = require('./models/restaurante');
+const Restaurante = require('./models/Restaurantes');
 
 // Configuramos readline para leer de la terminal
 const rl = readline.createInterface({
