@@ -19,6 +19,7 @@ const searchLocation = async (req, res) => {
       }
     });
 
+    console.log("Response from Google Places API:", JSON.stringify(response.data, null, 2));
     // Transformar la respuesta para obtener las coordenadas
     const places = (response.data.places || []).map((place, index) => {
       let coordinates = [];
