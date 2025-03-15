@@ -3,7 +3,6 @@
 const mongoose = require("mongoose");
 const { validationResult } = require("express-validator");
 const Restaurante = require("../models/restaurante");
-
 const getPublicRestaurantes = async (req, res) => {
   try {
     // Filtra restaurantes públicos (owners: "luisferrer2002@gmail.com")
