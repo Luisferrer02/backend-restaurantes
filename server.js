@@ -31,6 +31,7 @@ mongoose
 
 app.use('/api/restaurantes', require('./routes/restaurantesrutas'));
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/googleplaces', require('./routes/googlePlaces'));
 
 app.get('/', (req, res) => {
   res.send('Bienvenido al backend de restaurantes');

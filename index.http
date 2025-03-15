@@ -1,0 +1,20 @@
+POST https://places.googleapis.com/v1/places:searchText
+Content-Type: application/json
+X-Goog-Api-Key: AIzaSyDKa11rY2NNbzrQQMI7IhDNliCHQBw2aDE
+X-Goog-FieldMask: places.displayName,places.formattedAddress,places.priceLevel,places.location
+
+{
+  "textQuery": "restaurante Carbón Madrid"
+}
+
+###
+
+### Prueba a Google Places vía backend (localhost:5001)
+POST http://localhost:5001/api/googleplaces/search
+Content-Type: application/json
+X-Goog-Api-Key: AIzaSyDKa11rY2NNbzrQQMI7IhDNliCHQBw2aDE
+X-Goog-FieldMask: places.displayName,places.formattedAddress,places.priceLevel,places.location
+
+{
+  "textQuery": "restaurante Carbón Madrid"
+}

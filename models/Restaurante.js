@@ -1,3 +1,4 @@
+//models/Restaurante.js
 const mongoose = require('mongoose');
 
 const VisitaSchema = new mongoose.Schema({
@@ -12,24 +13,25 @@ const RestauranteSchema = new mongoose.Schema({
   visitas: { type: Array, default: [] },
   Descripcion: { type: String, default: "" },
   Imagen: { type: String, default: "" },
-  Coordenadas: {
+  // Nuevo campo para almacenar los emails de los owners
+  owners: { type: [String], required: true },
+  // Nuevo campo para almacenar la localización detallada (obtenida de Mapbox)
+  location: {
     type: {
       type: String,
-      enum: ["Point"],
-      required: false, // Opcional
+      enum: ['Point'],
+      default: 'Point'
     },
     coordinates: {
-      type: [Number],
-      required: false,
+      type: [Number] // [longitude, latitude]
     },
-  },
-  // New field to store owner(s) email(s)
-  owners: { type: [String], required: true },
+    place_name: String
+  }
 }, {
   collection: 'Restaurantes',
 });
 
-// Crear un índice 2dsphere para Coordenadas
-RestauranteSchema.index({ Coordenadas: '2dsphere' });
+// Crear un índice 2dsphere para Coordenadas y location
+RestauranteSchema.index({ Coordenadas: '2dsphere', location: '2dsphere' });
 
 module.exports = mongoose.model('Restaurante', RestauranteSchema);
