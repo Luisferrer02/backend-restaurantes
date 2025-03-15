@@ -18,6 +18,8 @@
     "express-validator": "^7.2.1",
     "inquirer": "^12.4.3",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.12.1"
+    "leaflet": "^1.9.4",
+    "mongoose": "^8.12.1",
+    "react-leaflet": "^5.0.0"
   }
 }
