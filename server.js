@@ -37,7 +37,8 @@ app.get('/', (req, res) => {
   res.send('Bienvenido al backend de restaurantes');
 });
 
-const server = app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
+const server= app.listen(PORT, '0.0.0.0', () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
+
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`El puerto ${PORT} ya está en uso. Por favor, elige otro puerto.`);
