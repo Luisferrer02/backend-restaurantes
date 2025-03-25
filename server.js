@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 5001;
 
 app.use(express.json());
 const allowedOrigins = ['https://webapp-restaurantes.netlify.app', 'http://localhost:3000']
-app.use(cors({
+/*app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) === -1) {
@@ -19,7 +19,8 @@ app.use(cors({
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
-}));
+}));*/
+app.use(cors());
 
 mongoose
   .connect(process.env.MONGO_URI)
