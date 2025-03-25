@@ -1,3 +1,5 @@
+//controllers/googlePlacesController.js
+
 const axios = require('axios');
 const googlePlacesApiKey = process.env.GOOGLE_PLACES_API_KEY;
 

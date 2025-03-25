@@ -36,8 +36,8 @@ app.use('/api/googleplaces', require('./routes/googlePlaces'));
 app.get('/', (req, res) => {
   res.send('Bienvenido al backend de restaurantes');
 });
-
-const server= app.listen(PORT, '0.0.0.0', () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
+console.log('Iniciando servidor')
+const server = app.listen(PORT, '0.0.0.0', () => console.log(`Servidor corriendo en puerto ${PORT}`));
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
