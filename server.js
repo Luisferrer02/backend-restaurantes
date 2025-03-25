@@ -8,7 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 app.use(express.json());
-const allowedOrigins = ['https://webapp-restaurantes.netlify.app', 'http://localhost:3000'];
+const allowedOrigins = ['https://webapp-restaurantes.netlify.app', 'http://localhost:3000']
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
